@@ -1,16 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
 <suite name="Suite">
-  <test name="Test">
-  <parameter name="browser" value="Chrome"/>
-    <classes>
-      <class name="com.demo.runner."/>
-    </classes>
-  </test>
-  <test name="Test2">
-    <parameter name="agent" value=""/>
-    <classes>
-      <class name="com.demo.runner."/>
-    </classes>
-  </test>
+    <test name="Web">
+        <groups>
+            <run>
+                <include name="userJoining"/>
+            </run>
+        </groups>
+        <classes>
+            <class name="com.demo.runner.AppTest"/>
+        </classes>
+    </test>
+    <test name="Mobile">
+        <groups>
+            <run>
+                <include name="mobile"/>
+            </run>
+        </groups>
+        <classes>
+            <class name="com.demo.runner.AppTest"/>
+        </classes>
+    </test>
+    <test name="Betting">
+        <groups>
+            <run>
+                <include name="betting"/>
+            </run>
+        </groups>
+        <classes>
+            <class name="com.demo.runner.AppTest"/>
+        </classes>
+    </test>
 </suite>

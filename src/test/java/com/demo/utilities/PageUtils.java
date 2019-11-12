@@ -3,6 +3,7 @@ package com.demo.utilities;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import com.relevantcodes.extentreports.LogStatus;
+import org.hamcrest.Condition;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -11,33 +12,48 @@ import org.openqa.selenium.support.ui.*;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class PageUtils {
 
     public static WebDriver driver;
     public static String currentDirectory = System.getProperty("user.dir");
 
+    public static void initDriver() {
+        try {
+            System.setProperty("webdriver.chrome.driver", currentDirectory + "\\SeleniumWebDrivers\\chromedriver.exe");
+            ChromeOptions options = new ChromeOptions();
+            options.addArguments("--disable-extensions");
+            driver = new ChromeDriver(options);
+        } catch (Exception e) {
+            System.out.println("Driver not found or init failed" + e.getMessage() + e.getStackTrace());
+        }
+    }
+
     /**
      * This method initializes webdriver
-     *
-     * @param browserType - Name of the browsers Chrome, Firefox
      */
-    public static void initDriver(String browserType, String agent) {
+    public static void initMobileDriver(String agent, int width, int height) {
         try {
-            if (browserType.contentEquals("Chrome")) {
-                System.setProperty("webdriver.chrome.driver", currentDirectory + "\\SeleniumWebDrivers\\chromedriver.exe");
-
-                ChromeOptions options = new ChromeOptions();
-                options.addArguments("--disable-extensions");
-               // options.addArguments('--user-agent=Mozilla/5.0 (iPhone; CPU iPhone OS 10_3 like Mac OS X) AppleWebKit/602.1.50 (KHTML, like Gecko) CriOS/56.0.2924.75 Mobile/14E5239e Safari/602.1')
-                driver = new ChromeDriver(options);
-            } else {
-                //initialize the other driver here
-            }
-        } catch (Exception e) {
-           System.out.println("Driver not found or init failed");
+            System.setProperty("webdriver.chrome.driver", currentDirectory + "\\SeleniumWebDrivers\\chromedriver.exe");
+            Map<String, Object> deviceMetrics = new HashMap<>();
+            deviceMetrics.put("width", width);
+            deviceMetrics.put("height", height);
+            // deviceMetrics.put("pixelRatio", 3.0);
+            Map<String, Object> mobileEmulation = new HashMap<>();
+            mobileEmulation.put("deviceMetrics", deviceMetrics);
+            //mobileEmulation.put("deviceName", "Nexus 5");
+            mobileEmulation.put("userAgent", agent);
+            ChromeOptions options = new ChromeOptions();
+            options.setExperimentalOption("mobileEmulation", mobileEmulation);
+            driver = new ChromeDriver(options);
+        } catch (
+                Exception e) {
+            System.out.println("Driver not found or init failed" + e.getMessage() + e.getStackTrace());
         }
+
     }
 
     /**
@@ -51,10 +67,31 @@ public class PageUtils {
         select.selectByVisibleText(option);
     }
 
+    public static void selectFromRadioGroup(By locator, String option, By childLocator) {
+        List<WebElement> list = driver.findElements(locator);
+        for (WebElement item : list) {
+            if (item.getText() != "" && item.getText().contains(option)) {
+                if (childLocator != null) {
+                    click(item.findElement(childLocator));
+                }
+                click(item);
+            }
+        }
+    }
+
+    public static void selectCheckBox(By chkBox) {
+        try {
+            driver.findElement(chkBox).click();
+        } catch (Exception e) {
+            System.out.println("checkbox click failed");
+        }
+
+    }
+
     /**
      * This method launches url and maximizes the screen
      *
-     * @param url - page url
+     * @param url      - page url
      * @param pageName - name of the page to be loaded
      * @return title of the page
      */
@@ -62,10 +99,10 @@ public class PageUtils {
         try {
             driver.get(url);
             driver.manage().window().maximize();
-            ExtentReportNG.logTest(LogStatus.INFO, "application launch", pageName);
+            //ExtentReportNG.logTest(LogStatus.INFO, "application launch", pageName);
             return driver.getTitle();
         } catch (Exception e) {
-            ExtentReportNG.logTest(LogStatus.FAIL, "Issue in launching the application", "LaunchError");
+            // ExtentReportNG.logTest(LogStatus.FAIL, "Issue in launching the application", "LaunchError");
             return null;
         }
     }
@@ -78,14 +115,14 @@ public class PageUtils {
      */
     public static WebElement find(By locator) {
         try {
-//            Wait wait = new FluentWait(driver).withTimeout(20, SECONDS)
-//                    .pollingEvery(2, SECONDS)
-//                    .ignoring(NoSuchElementException.class)
-//                    .ignoring(StaleElementReferenceException.class)
-//                    .ignoring(NullPointerException.class)
-//                    .ignoring(ElementNotVisibleException.class);
-//
-//            wait.until(ExpectedConditions.presenceOfElementLocated(locator));
+            Wait wait = new FluentWait(driver).withTimeout(20, SECONDS)
+                    .pollingEvery(2, SECONDS)
+                    .ignoring(NoSuchElementException.class)
+                    .ignoring(StaleElementReferenceException.class)
+                    .ignoring(NullPointerException.class)
+                    .ignoring(ElementNotVisibleException.class);
+
+            wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
             return driver.findElement(locator);
         } catch (Exception e) {
             ExtentReportNG.logTest(LogStatus.INFO, "Exception caught in finding the element" + e.getMessage());
@@ -93,24 +130,12 @@ public class PageUtils {
         return null;
     }
 
-    /**
-     * finds the webelement in the table cell using row and target element's locator
-     * and clicks on it
-     *
-     * @param row           locator of row
-     * @param itemName      item against which the action has to be taken
-     * @param targetLocator locator of the column
-     */
-    public static void clickElementInTable(By row, String itemName, By targetLocator) {
+    public static void selectFirstItemFromList(By listLocator) {
         try {
-            List<WebElement> rows = driver.findElements(row);
-            for (WebElement item : rows) {
-                if (item.getText() != "" || item.getText().contains(itemName)) {
-                    click(find(targetLocator));
-                }
-            }
+            List<WebElement> list = driver.findElements(listLocator);
+            click(list.get(0));
         } catch (Exception e) {
-            ExtentReportNG.logTest(LogStatus.INFO, "Exception caught in clicking the element in the table" + e.getMessage());
+            ExtentReportNG.logTest(LogStatus.INFO, "Exception caught in the list" + e.getMessage());
         }
     }
 
@@ -122,14 +147,14 @@ public class PageUtils {
      */
     public static WebElement click(WebElement webElement) {
         try {
-//            Wait wait = new FluentWait(driver).withTimeout(20, SECONDS)
-//                    .pollingEvery(2, SECONDS)
-//                    .ignoring(NoSuchElementException.class)
-//                    .ignoring(WebDriverException.class)
-//                    .ignoring(NullPointerException.class);
-//
-//            wait.until(ExpectedConditions.elementToBeClickable(webElement));
-//            webElement.click();
+            Wait wait = new FluentWait(driver).withTimeout(20, SECONDS)
+                    .pollingEvery(2, SECONDS)
+                    .ignoring(NoSuchElementException.class)
+                    .ignoring(WebDriverException.class)
+                    .ignoring(NullPointerException.class);
+
+            wait.until(ExpectedConditions.elementToBeClickable(webElement));
+            webElement.click();
             return webElement;
         } catch (Exception e) {
             ExtentReportNG.logTest(LogStatus.INFO, "Exception caught in clicking the element" + e.getMessage());
@@ -145,10 +170,10 @@ public class PageUtils {
      */
     public static String getText(By locator) {
         try {
-//            Wait wait = new FluentWait(driver).withTimeout(20, SECONDS)
-//                    .pollingEvery(2, SECONDS)
-//                    .ignoring(StaleElementReferenceException.class);
-//            wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
+            Wait wait = new FluentWait(driver).withTimeout(10, SECONDS)
+                    .pollingEvery(2, SECONDS)
+                    .ignoring(StaleElementReferenceException.class);
+            wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
             return find(locator).getText();
         } catch (Exception e) {
             ExtentReportNG.logTest(LogStatus.INFO, "Exception caught in getting text " + e.getMessage());
@@ -196,14 +221,21 @@ public class PageUtils {
      * @param includeLetters
      * @param includeNumbers
      */
-    public static String genRandomly(int length, boolean includeLetters, boolean includeNumbers){
+    public static String genRandomly(int length, boolean includeLetters, boolean includeNumbers) {
         return RandomStringUtils.random(length, includeLetters, includeNumbers);
     }
 
     /**
-     * closes browser windows
+     * closes browser window
      */
     public static void closeDriver() {
+        driver.close();
+
+    }
+    /**
+     * closes browser windows
+     */
+    public static void quitDriver() {
         driver.close();
         driver.quit();
     }
@@ -219,5 +251,10 @@ public class PageUtils {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public  static void scrollUp(){
+        JavascriptExecutor js = ((JavascriptExecutor) driver);
+        js.executeScript("window.scrollTo(0, document.body.scrollHeight);");
     }
 }

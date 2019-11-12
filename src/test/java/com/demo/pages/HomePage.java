@@ -9,7 +9,7 @@ import org.openqa.selenium.By;
  */
 public class HomePage {
 
-    public final String homeUrl = "https://wwww.tab.co.nz";
+    public final String homeUrl = "https://www.tab.co.nz";
 
     //region - locators
 
@@ -20,9 +20,13 @@ public class HomePage {
     By txtUserName = By.cssSelector("input#LabeledTextField_username");
     By txtPassword = By.cssSelector("input#LabeledTextField_login-password-id");
     By btnLogin = By.cssSelector("button.login-button");
+
+    By btnPlayerDetails = By.cssSelector("div.player-details");
+    By btnSignOut = By.cssSelector("button.button-sign-out");
     // endregion
 
     //region - sign up
+
     /**
      * launches home page and maximizes the browser
      *
@@ -41,16 +45,36 @@ public class HomePage {
     }
 
 
-
-    //region - sign in
+    //region - sign in - out
 
     /**
      * clicks on sign in link
      */
-    public void selectSignIn() {
+    public HomePage selectSignIn() {
         click(find(btnSignIn));
+        return this;
     }
 
+    public HomePage enterCredentialsAndLogin(String un, String pwd) {
+        input(find(txtUserName), un);
+        input(find(txtPassword), pwd);
+        click(find(btnLogin));
+        find(btnPlayerDetails);
+        return this;
+    }
+
+    public boolean signOut() {
+        click(find(btnPlayerDetails));
+        click(find(btnSignOut));
+        if(btnSignIn !=null){
+            return true;
+        }
+        return false;
+    }
+
+    public void selectSlipMobile(){
+        click(find(By.cssSelector("div.my-bets-compact-counts")));
+    }
     //endregion
 
-   }
+}
